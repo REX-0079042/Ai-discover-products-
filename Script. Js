@@ -1,3 +1,4 @@
+
 // --- Best Practice: Wrap code in an IIFE to avoid polluting the global scope ---
 (function() {
     // Sample product data - In a real app, this would come from an API
