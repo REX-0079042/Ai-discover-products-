@@ -1,0 +1,203 @@
+# Ai-discover-products-
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Product Discovery</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <i class="fas fa-search-plus"></i>
+                    <span>AI Discovery</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#home">Home</a>
+                    <a href="#products">Products</a>
+                    <a href="#about">About</a>
+                    <button id="loginBtn" class="login-btn">
+                        <i class="fas fa-user"></i>
+                        Login
+                    </button>
+                </div>
+                <div class="mobile-menu-toggle">
+                    <button aria-label="Open navigation menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Discover Products with AI Intelligence</h1>
+                    <p>Find exactly what you're looking for with our advanced AI-powered search and personalized
+                        recommendations</p>
+
+                    <div class="search-container">
+                        <div class="search-box">
+                            <label for="aiSearch" class="sr-only">Describe what you're looking for</label>
+                            <i class="fas fa-brain search-icon"></i>
+                            <input type="text" id="aiSearch"
+                                placeholder="e.g., 'comfortable running shoes for outdoor activities'">
+                            <button id="searchBtn" class="search-btn" aria-label="Search">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="search-suggestions">
+                            <span class="suggestion-tag">Wireless headphones</span>
+                            <span class="suggestion-tag">Gaming laptop</span>
+                            <span class="suggestion-tag">Fitness tracker</span>
+                            <span class="suggestion-tag">Smart home devices</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="filters-section">
+            <div class="container">
+                <h2>Refine Your Search</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="categoryFilter">Category</label>
+                        <select id="categoryFilter">
+                            <option value="">All Categories</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="home">Home & Garden</option>
+                            <option value="sports">Sports & Outdoors</option>
+                            <option value="books">Books</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="priceFilter">Price Range</label>
+                        <select id="priceFilter">
+                            <option value="">Any Price</option>
+                            <option value="0-25">$0 - $25</option>
+                            <option value="25-50">$25 - $50</option>
+                            <option value="50-100">$50 - $100</option>
+                            <option value="100-500">$100 - $500</option>
+                            <option value="500+">$500+</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="ratingFilter">Rating</label>
+                        <select id="ratingFilter">
+                            <option value="">Any Rating</option>
+                            <option value="4">4+ Stars</option>
+                            <option value="3">3+ Stars</option>
+                            <option value="2">2+ Stars</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="sortFilter">Sort By</label>
+                        <select id="sortFilter">
+                            <option value="relevance">Relevance</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Customer Rating</option>
+                            <option value="newest">Newest First</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="products" class="products-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Recommended For You</h2>
+                    <p>Based on your preferences and Browse history</p>
+                </div>
+                <div id="productsGrid" class="products-grid">
+                    </div>
+                <div class="load-more">
+                    <button id="loadMoreBtn" class="load-more-btn">Load More Products</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="ai-insights">
+            <div class="container">
+                <h2>AI-Powered Insights</h2>
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Trending Products</h3>
+                        <p>Discover what's popular based on real-time data and user behavior</p>
+                    </div>
+                    <div class="insight-card">
+                        <i class="fas fa-user-friends"></i>
+                        <h3>Personalized Recommendations</h3>
+                        <p>Get suggestions tailored to your unique preferences and shopping history</p>
+                    </div>
+                    <div class="insight-card">
+                        <i class="fas fa-search"></i>
+                        <h3>Smart Search</h3>
+                        <p>Find products using natural language - just describe what you need</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div id="loginModal" class="modal" role="dialog" aria-labelledby="loginModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close" aria-label="Close">&times;</button>
+            <h2 id="loginModalTitle">Sign In to Your Account</h2>
+            <p>Access personalized recommendations and save your preferences</p>
+
+            <div class="social-login">
+                <button class="social-btn google-btn" id="googleLogin">
+                    <i class="fab fa-google"></i>
+                    Continue with Google
+                </button>
+                <button class="social-btn facebook-btn" id="facebookLogin">
+                    <i class="fab fa-facebook-f"></i>
+                    Continue with Facebook
+                </button>
+            </div>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <form class="login-form">
+                <div class="form-group">
+                    <label for="email" class="sr-only">Email address</label>
+                    <input type="email" id="email" placeholder="Email address" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="sr-only">Password</label>
+                    <input type="password" id="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="submit-btn">Sign In</button>
+            </form>
+
+            <p class="signup-link">
+                Don't have an an account? <a href="#" id="signupLink">Sign up here</a>
+            </p>
+        </div>
+    </div>
+
+    <div id="loadingSpinner" class="loading-spinner" role="status" aria-live="polite">
+        <div class="spinner"></div>
+        <p>AI is finding the best products for you...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
