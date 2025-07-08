@@ -1,0 +1,440 @@
+// --- Best Practice: Wrap code in an IIFE to avoid polluting the global scope ---
+(function() {
+    // Sample product data - In a real app, this would come from an API
+    const sampleProducts = [
+        { id: 1, title: "Wireless Bluetooth Headphones", description: "Premium noise-cancelling headphones with 30-hour battery life", price: 199.99, rating: 4.5, reviews: 1250, category: "electronics", image: "🎧" },
+        { id: 2, title: "Smart Fitness Tracker", description: "Advanced health monitoring with GPS and heart rate tracking", price: 149.99, rating: 4.3, reviews: 892, category: "electronics", image: "⌚" },
+        { id: 3, title: "Organic Cotton T-Shirt", description: "Sustainable, comfortable everyday wear in multiple colors", price: 29.99, rating: 4.7, reviews: 567, category: "clothing", image: "👕" },
+        { id: 4, title: "Gaming Mechanical Keyboard", description: "RGB backlit keyboard with premium switches for gaming", price: 89.99, rating: 4.6, reviews: 734, category: "electronics", image: "⌨️" },
+        { id: 5, title: "Yoga Mat Pro", description: "Non-slip eco-friendly yoga mat with alignment guides", price: 59.99, rating: 4.4, reviews: 423, category: "sports", image: "🧘" },
+        { id: 6, title: "Smart Home Security Camera", description: "1080p WiFi camera with night vision and motion detection", price: 79.99, rating: 4.2, reviews: 891, category: "electronics", image: "📹" },
+        { id: 7, title: "Leather Laptop Bag", description: "Professional genuine leather bag with multiple compartments", price: 119.99, rating: 4.8, reviews: 356, category: "clothing", image: "💼" },
+        { id: 8, title: "Indoor Plant Collection", description: "Set of 3 low-maintenance air-purifying plants with pots", price: 45.99, rating: 4.5, reviews: 234, category: "home", image: "🪴" }
+    ];
+
+    // Application state
+    let allProducts = [...sampleProducts]; // Renamed to clarify it holds ALL products
+    let currentUser = null;
+    let currentFilters = {
+        category: '',
+        price: '',
+        rating: '',
+        sort: 'relevance',
+        search: ''
+    };
+
+    // DOM elements
+    const loginBtn = document.getElementById('loginBtn');
+    const loginModal = document.getElementById('loginModal');
+    const closeModal = document.querySelector('.close');
+    const aiSearch = document.getElementById('aiSearch');
+    const searchBtn = document.getElementById('searchBtn');
+    const productsGrid = document.getElementById('productsGrid');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const priceFilter = document.getElementById('priceFilter');
+    const ratingFilter = document.getElementById('ratingFilter');
+    const sortFilter = document.getElementById('sortFilter');
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeApp();
+        setupEventListeners();
+        applyFiltersAndRender(); // Initial render
+    });
+
+    function initializeApp() {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+        }
+        updateLoginState(); // Update UI based on user state
+        
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    }
+
+    function setupEventListeners() {
+        closeModal.addEventListener('click', () => loginModal.style.display = 'none');
+        window.addEventListener('click', (e) => {
+            if (e.target === loginModal) loginModal.style.display = 'none';
+        });
+        
+        searchBtn.addEventListener('click', handleSearch);
+        aiSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
+        });
+        
+        document.querySelectorAll('.suggestion-tag').forEach(tag => {
+            tag.addEventListener('click', () => {
+                aiSearch.value = tag.textContent;
+                handleSearch();
+            });
+        });
+        
+        [categoryFilter, priceFilter, ratingFilter, sortFilter].forEach(filter => {
+            filter.addEventListener('change', handleFilterChange);
+        });
+        
+        loadMoreBtn.addEventListener('click', loadMoreProducts);
+        document.getElementById('googleLogin').addEventListener('click', () => handleSocialLogin('google'));
+        document.getElementById('facebookLogin').addEventListener('click', () => handleSocialLogin('facebook'));
+        document.querySelector('.mobile-menu-toggle').addEventListener('click', () => {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+        });
+        document.querySelector('.login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showNotification('Regular login feature coming soon!', 'info');
+        });
+    }
+
+    function handleSearch() {
+        const query = aiSearch.value.trim();
+        showLoading();
+        currentFilters.search = query;
+        
+        setTimeout(() => {
+            applyFiltersAndRender();
+            hideLoading();
+            if (query) {
+                document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 1500); // Simulate AI processing
+    }
+
+    function handleFilterChange() {
+        currentFilters.category = categoryFilter.value;
+        currentFilters.price = priceFilter.value;
+        currentFilters.rating = ratingFilter.value;
+        currentFilters.sort = sortFilter.value;
+        applyFiltersAndRender();
+    }
+    
+    // --- REFACTOR: Centralized function to apply all filters and render products ---
+    function applyFiltersAndRender() {
+        let productsToRender = [...allProducts];
+
+        // Apply search filter first
+        if (currentFilters.search) {
+            const keywords = currentFilters.search.toLowerCase().split(' ');
+            productsToRender = productsToRender.filter(product => {
+                const searchText = `${product.title} ${product.description} ${product.category}`.toLowerCase();
+                return keywords.some(keyword => searchText.includes(keyword));
+            }).sort((a, b) => {
+                const aMatches = keywords.filter(keyword => `${a.title} ${a.description}`.toLowerCase().includes(keyword)).length;
+                const bMatches = keywords.filter(keyword => `${b.title} ${b.description}`.toLowerCase().includes(keyword)).length;
+                return bMatches - aMatches;
+            });
+        }
+
+        // Apply category filter
+        if (currentFilters.category) {
+            productsToRender = productsToRender.filter(p => p.category === currentFilters.category);
+        }
+
+        // Apply price filter
+        if (currentFilters.price) {
+            const [min, max] = currentFilters.price.split('-').map(p => p === '+' ? Infinity : parseFloat(p));
+            productsToRender = productsToRender.filter(p => p.price >= min && (max === undefined || p.price <= max));
+        }
+
+        // Apply rating filter
+        if (currentFilters.rating) {
+            productsToRender = productsToRender.filter(p => p.rating >= parseFloat(currentFilters.rating));
+        }
+
+        // Apply sorting
+        switch (currentFilters.sort) {
+            case 'price-low': productsToRender.sort((a, b) => a.price - b.price); break;
+            case 'price-high': productsToRender.sort((a, b) => b.price - a.price); break;
+            case 'rating': productsToRender.sort((a, b) => b.rating - a.rating); break;
+            case 'newest': productsToRender.sort((a, b) => b.id - a.id); break;
+        }
+
+        renderProducts(productsToRender);
+    }
+
+    function renderProducts(products) {
+        productsGrid.innerHTML = '';
+        
+        if (products.length === 0) {
+            productsGrid.innerHTML = `
+                <div class="no-products-found">
+                    <i class="fas fa-search"></i>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your search terms or filters</p>
+                </div>`;
+            return;
+        }
+        
+        products.forEach(product => {
+            const productCard = createProductCard(product);
+            productsGrid.appendChild(productCard);
+        });
+    }
+
+    // --- REFACTOR: Use `createElement` for security and performance. Avoid `innerHTML`. ---
+    function createProductCard(product) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        
+        // --- FIX: Add event listener programmatically instead of `onclick` attribute ---
+        card.addEventListener('click', (e) => {
+             // Only show details if the click was not on the "Add to Cart" button
+            if (!e.target.closest('.add-to-cart')) {
+                showProductDetails(product);
+            }
+        });
+
+        const image = document.createElement('div');
+        image.className = 'product-image';
+        image.textContent = product.image;
+
+        const info = document.createElement('div');
+        info.className = 'product-info';
+
+        const title = document.createElement('h3');
+        title.className = 'product-title';
+        title.textContent = product.title;
+
+        const description = document.createElement('p');
+        description.className = 'product-description';
+        description.textContent = product.description;
+
+        const price = document.createElement('div');
+        price.className = 'product-price';
+        price.textContent = `$${product.price}`;
+
+        const ratingDiv = document.createElement('div');
+        ratingDiv.className = 'product-rating';
+
+        const stars = document.createElement('div');
+        stars.className = 'stars';
+        stars.appendChild(generateStars(product.rating)); // generateStars now returns a DocumentFragment
+
+        const ratingText = document.createElement('span');
+        ratingText.className = 'rating-text';
+        ratingText.textContent = `${product.rating} (${product.reviews} reviews)`;
+
+        ratingDiv.append(stars, ratingText);
+
+        const addToCartBtn = document.createElement('button');
+        addToCartBtn.className = 'add-to-cart';
+        addToCartBtn.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart'; // Using innerHTML here is safe for static content
+        
+        // --- FIX: Add a proper event listener to the button ---
+        addToCartBtn.addEventListener('click', (event) => {
+            addToCart(product, event.currentTarget); // Pass the button element itself
+        });
+
+        info.append(title, description, price, ratingDiv, addToCartBtn);
+        card.append(image, info);
+        
+        return card;
+    }
+
+    // --- REFACTOR: Returns a DocumentFragment instead of an HTML string ---
+    function generateStars(rating) {
+        const fragment = document.createDocumentFragment();
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 !== 0;
+
+        for (let i = 0; i < 5; i++) {
+            const star = document.createElement('i');
+            if (i < fullStars) {
+                star.className = 'fas fa-star';
+            } else if (i === fullStars && hasHalfStar) {
+                star.className = 'fas fa-star-half-alt';
+            } else {
+                star.className = 'far fa-star';
+            }
+            fragment.appendChild(star);
+        }
+        return fragment;
+    }
+
+    // --- FIX: `addToCart` now accepts the button element directly, avoiding the unreliable `event.target` ---
+    function addToCart(product, buttonElement) {
+        if (!product) return;
+        
+        showNotification(`${product.title} added to cart!`, 'success');
+        
+        buttonElement.innerHTML = '<i class="fas fa-check"></i> Added!';
+        buttonElement.style.background = '#28a745';
+        buttonElement.disabled = true;
+
+        setTimeout(() => {
+            buttonElement.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
+            buttonElement.style.background = '';
+            buttonElement.disabled = false;
+        }, 2000);
+    }
+
+    function showProductDetails(product) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.maxWidth = '600px';
+
+        // Using a template literal for simplicity inside the modal, but created programmatically.
+        modalContent.innerHTML = `
+            <span class="close">&times;</span>
+            <div style="text-align: center;">
+                <div style="font-size: 5rem; margin-bottom: 1rem;">${product.image}</div>
+                <h2>${product.title}</h2>
+                <p style="color: #666; margin-bottom: 1rem;">${product.description}</p>
+                <div style="font-size: 2rem; color: #667eea; margin-bottom: 1rem;">$${product.price}</div>
+                <div class="product-rating" style="justify-content: center; margin-bottom: 2rem;">
+                    <div class="stars">${generateStars(product.rating).innerHTML}</div>
+                    <span>${product.rating} stars (${product.reviews} reviews)</span>
+                </div>
+                <button class="add-to-cart">
+                    <i class="fas fa-cart-plus"></i> Add to Cart
+                </button>
+            </div>
+        `;
+        
+        const closeModal = () => document.body.removeChild(modal);
+        modal.querySelector('.close').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        
+        // --- FIX: Add listener to the modal's cart button ---
+        const addToCartBtn = modal.querySelector('.add-to-cart');
+        addToCartBtn.addEventListener('click', (event) => {
+            addToCart(product, event.currentTarget);
+            setTimeout(closeModal, 500); // Close modal after a short delay
+        });
+
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+    }
+    
+    function loadMoreProducts() {
+        showLoading();
+        setTimeout(() => {
+            const moreProducts = generateMoreProducts();
+            allProducts.push(...moreProducts); // Add to the master list
+            applyFiltersAndRender(); // Re-apply filters and render
+            hideLoading();
+        }, 1000);
+    }
+
+    function generateMoreProducts() {
+        const templates = [
+            { title: "Wireless Mouse", category: "electronics", price: 39.99, image: "🖱️" },
+            { title: "Coffee Maker", category: "home", price: 89.99, image: "☕" },
+            { title: "Running Shoes", category: "sports", price: 129.99, image: "👟" }
+        ];
+        return templates.map((t, i) => ({
+            id: allProducts.length + i + 1,
+            title: t.title,
+            description: `High-quality ${t.title.toLowerCase()} with premium features`,
+            price: t.price,
+            rating: parseFloat((Math.random() * 2 + 3).toFixed(1)), // Keep rating as a number
+            reviews: Math.floor(Math.random() * 800 + 100),
+            category: t.category,
+            image: t.image
+        }));
+    }
+
+    function handleSocialLogin(provider) {
+        showLoading();
+        setTimeout(() => {
+            currentUser = {
+                id: Date.now(),
+                name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
+                email: `user@${provider}.com`,
+                provider: provider,
+            };
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            updateLoginState();
+            loginModal.style.display = 'none';
+            hideLoading();
+            showNotification(`Welcome, ${currentUser.name}!`, 'success');
+        }, 1500);
+    }
+    
+    // --- REFACTOR: Use add/removeEventListener for login button state changes ---
+    const showLoginModalHandler = () => loginModal.style.display = 'block';
+
+    function updateLoginState() {
+        // First, remove any existing listeners to avoid duplicates
+        loginBtn.removeEventListener('click', showLoginModalHandler);
+        loginBtn.removeEventListener('click', logout);
+
+        if (currentUser) {
+            loginBtn.innerHTML = `<i class="fas fa-user-circle"></i> ${currentUser.name}`;
+            loginBtn.addEventListener('click', logout);
+        } else {
+            loginBtn.innerHTML = `<i class="fas fa-user"></i> Login`;
+            loginBtn.addEventListener('click', showLoginModalHandler);
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('user');
+        updateLoginState();
+        showNotification('Logged out successfully', 'info');
+    }
+
+    function showLoading() { loadingSpinner.style.display = 'flex'; }
+    function hideLoading() { loadingSpinner.style.display = 'none'; }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            notification.addEventListener('transitionend', () => notification.remove());
+        }, 3000);
+    }
+
+    // Add required CSS for notifications and animations in a single block
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+        .no-products-found {
+            grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;
+        }
+        .no-products-found i { font-size: 3rem; margin-bottom: 1rem; color: #ccc; }
+        .no-products-found h3 { color: #666; margin-bottom: 0.5rem; }
+        
+        .notification {
+            position: fixed; top: 100px; right: 20px; color: white;
+            padding: 1rem 1.5rem; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 4000;
+            display: flex; align-items: center; gap: 0.5rem;
+            transform: translateX(0);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .notification.fade-out { transform: translateX(120%); opacity: 0; }
+        .notification-success { background: #28a745; }
+        .notification-error { background: #dc3545; }
+        .notification-info { background: #17a2b8; }
+
+        .product-card, .insight-card, .filter-group {
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(styleSheet);
+})();
